@@ -1,4 +1,4 @@
-FROM ubuntu:focal
+FROM ashish1981/multiarch-r
 ARG CRAN
 SHELL ["/bin/bash", "-c"]
 ## Configure default locale, see https://github.com/rocker-org/rocker/issues/19
@@ -30,11 +30,11 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y \
     cmake
 
 ## Setup R
-ADD build_r.sh /tmp/
-RUN cd /tmp \
-    # && wget https://raw.githubusercontent.com/linux-on-ibm-z/scripts/master/R/4.1.1/build_r.sh \
-    # && bash build_r.sh -y -j AdoptJDK-OpenJ9 \
-    && bash build_r.sh -y 
+# ADD build_r.sh /tmp/
+# RUN cd /tmp \
+#     # && wget https://raw.githubusercontent.com/linux-on-ibm-z/scripts/master/R/4.1.1/build_r.sh \
+#     # && bash build_r.sh -y -j AdoptJDK-OpenJ9 \
+#     && bash build_r.sh -y 
 ## Build CMAKE
 # RUN wget http://www.cmake.org/files/v2.8/cmake-2.8.10.tar.gz \
 #     && tar -zxf cmake-2.8.10.tar.gz \
