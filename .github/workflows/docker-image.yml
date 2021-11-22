@@ -82,9 +82,9 @@ jobs:
         id: create_release
         with:
           draft: false
-          prerelease: false
-          release_name: v${SHINY_VERSION}
-          # tag_name: ${{ github.ref }}
+          prerelease: true
+          release_name: v1.5.18.0
+          tag_name: v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - 
