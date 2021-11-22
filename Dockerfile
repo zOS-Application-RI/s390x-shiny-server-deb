@@ -20,15 +20,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update -y \
     && apt-get install -y \
     python3 \
     gcc \
-    gcc-c++ \
+    g++ \
     autoconf \
     automake \
     git \
     curl \
     wget \
     sudo \
-    xz \
-    rpm-build \
     cmake
 
 ## Setup R
