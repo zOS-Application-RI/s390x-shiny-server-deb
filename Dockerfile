@@ -1,51 +1,52 @@
-FROM ashish1981/multiarch-r-plugins
+FROM ubuntu:focal
 ARG CRAN
 SHELL ["/bin/bash", "-c"]
-RUN source /root/setenv.sh 
+## Configure default locale, see https://github.com/rocker-org/rocker/issues/19
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y update \
+    && ln -fs /usr/share/zoneinfo/Asia/Kolkata /etc/localtime \
+    && apt-get install -y locales tzdata 
+
 RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen \
     && locale-gen en_US.utf8 \
     && /usr/sbin/update-locale LANG=en_US.UTF-8
 
-ENV LC_ALL=en_US.UTF-8 \
+ENV DEBIAN_FRONTEND=noninteractive \
+    LC_ALL=en_US.UTF-8 \
     LC_CTYPE=en_US.UTF-8 \
     LANG=en_US.UTF-8 \
     CRAN=${CRAN:-https://cran.rstudio.com}
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y python3 cmake gcc g++ git r-base-dev 
+RUN DEBIAN_FRONTEND=noninteractive apt-get update -y \
+    && apt-get install -y \
+    python3 \
+    gcc \
+    gcc-c++ \
+    autoconf \
+    automake \
+    git \
+    curl \
+    wget \
+    sudo \
+    xz \
+    rpm-build \
+    cmake
 
+## Setup R
+ADD build_r.sh /tmp/
+RUN cd /tmp \
+    # && wget https://raw.githubusercontent.com/linux-on-ibm-z/scripts/master/R/4.1.1/build_r.sh \
+    # && bash build_r.sh -y -j AdoptJDK-OpenJ9 \
+    && bash build_r.sh -y 
+## Build CMAKE
+# RUN wget http://www.cmake.org/files/v2.8/cmake-2.8.10.tar.gz \
+#     && tar -zxf cmake-2.8.10.tar.gz \
+#     && cd cmake-2.8.10 \
+#     && ./configure --prefix=/usr/local \
+#     && gmake install \
+#     && cmake -version
 
-## Don't require a password for sudo
-RUN sed -i 's/^\(%sudo.*\)ALL$/\1NOPASSWD:ALL/' /etc/sudoers
-## Add a library directory (for user-installed packages)
-RUN chmod g+ws /usr/local/lib/R/site-library \
-    ## Fix library path
-    && sed -i '/^R_LIBS_USER=.*$/d' /usr/local/lib/R/etc/Renviron \
-    && echo "R_LIBS_USER=\${R_LIBS_USER-'/usr/local/lib/R/site-library'}" >> /usr/local/lib/R/etc/Renviron \
-    && echo "R_LIBS=\${R_LIBS-'/usr/local/lib/R/site-library:/usr/local/lib/R/library:/usr/lib/R/library'}" >> /usr/local/lib/R/etc/Renviron \
-    ## Set configured CRAN mirror
-    && echo CRAN=$CRAN >> /etc/environment \
-    && echo "options(repos = c(CRAN='$CRAN'), download.file.method = 'libcurl')" >> /usr/local/lib/R/etc/Rprofile.site 
+RUN git clone https://github.com/rstudio/shiny-server.git 
 
-## Create shiny user with empty password (will have uid and gid 1000)
-RUN useradd --create-home --shell /bin/bash shiny \
-    && passwd shiny -d \
-    && adduser shiny sudo \
-    && cp /root/setenv.sh /home/shiny/ \
-    && chmod +x /home/shiny/setenv.sh \
-    && chown -R shiny.shiny /usr/local/lib/R/site-library \
-    && source /home/shiny/setenv.sh
-################################################
-#################  Shiny Server   ##############
-################################################
-RUN cd /home/shiny \
-    && git clone https://github.com/rstudio/shiny-server.git 
-    # && git clone https://github.com/Ashish1981/shiny-server.git 
+COPY install-node.sh shiny-server/external/node/
 
-COPY install-node.sh /home/shiny/shiny-server/external/node/
-
-COPY shiny-build.sh /tmp/shiny-build.sh
-
-RUN  chmod a+x /tmp/shiny-build.sh \
-    && chmod a+x /home/shiny/shiny-server/external/node/install-node.sh \
-    && ./tmp/shiny-build.sh
-
+RUN shiny-server/packaging/make-package.sh
