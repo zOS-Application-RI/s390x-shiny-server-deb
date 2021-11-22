@@ -51,19 +51,12 @@ jobs:
             ${{ runner.os }}-buildx-
 
       -
-        name: Login to Redhat
-        uses: docker/login-action@v1.10.0
-        with:
-          registry: registry.redhat.io
-          username: ${{ secrets.REDHAT_USERNAME }}
-          password: ${{ secrets.REDHAT_ACCESS_TOKEN }}
-      -
         name: Login to Docker Hub
         uses: docker/login-action@v1.10.0
         with:
-          registry: registry.access.redhat.com
-          username: ${{ secrets.REDHAT_USERNAME }}
-          password: ${{ secrets.REDHAT_ACCESS_TOKEN }}
+          registry: docker.io
+          username: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
       -
         name: Build and push
         uses: docker/build-push-action@v2.7.0
@@ -84,14 +77,8 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
       
       - 
-        uses: shrink/actions-docker-extract@v1
-        id: extract
-        with:
-          image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ github.event.repository.name }}
-          path: /shiny-server/packaging/build/shiny-server-${SHINY_VERSION}-${ARCH}.deb
-      - 
         name: release
-        uses: actions/create-release@v1
+        uses: actions/create-release@v1.1.4
         id: create_release
         with:
           draft: false
@@ -101,8 +88,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
       - 
-        name: Upload Dist
-        uses: actions/upload-artifact@v2
+        uses: shrink/actions-docker-extract@v1
+        id: extract
+        with:
+          image: ${{ secrets.DOCKER_HUB_USERNAME }}/${{ github.event.repository.name }}
+          path: '/shiny-server/packaging/build/shiny-server-1.5.18.0-s390x.deb'
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.4
         with:
           path: ${{ steps.extract.outputs.destination }}
-          name: shiny-server-${SHINY_VERSION}-${arch}.deb
+          name: shiny-server-1.5.18.0-s390x.deb
