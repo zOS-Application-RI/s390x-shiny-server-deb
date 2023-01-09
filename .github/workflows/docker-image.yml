@@ -95,7 +95,7 @@ jobs:
           path: '/shiny-server/packaging/build/shiny-server-1.5.18.0-s390x.deb'
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v3.1.2
         with:
           path: ${{ steps.extract.outputs.destination }}
           name: shiny-server-1.5.18.0-s390x.deb
